@@ -72,16 +72,34 @@ body {
   text-decoration: none;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .header-logo {
-  height: 60px;
+  height: 50px;
   width: auto;
   display: block;
 }
 
+.header-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+}
+
 .header h1 span {
   color: var(--green-400);
+}
+
+/* Hero banner */
+.hero-banner {
+  background: #1e5c1e;
+  color: white;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 400;
+  padding: 20px 16px;
+  line-height: 1.4;
 }
 
 .header nav {
