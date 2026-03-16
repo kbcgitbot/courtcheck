@@ -121,12 +121,12 @@ async function loadWeather() {
     barEl.innerHTML = `
       <div class="weather-bar-inner">
         <span class="weather-bar-location">📍 Arlington, VA</span>
-        <span class="weather-bar-item">${wmoToEmoji(currentCode)} ${currentTemp}°F — ${wmoToLabel(currentCode)}</span>
+        <span class="weather-bar-item">Currently: ${currentTemp}°F — ${wmoToLabel(currentCode)}</span>
         ${rainHtml('Next 4hrs', rain4h)}
         ${rainHtml('Next 8hrs', rain8h)}
         ${rainHtml('Tonight', rainTonight)}
-        <span class="weather-bar-item">🌅 ${sunrise}</span>
-        <span class="weather-bar-item">🌇 ${sunset}</span>
+        <span class="weather-bar-item">Sunrise: ${sunrise}</span>
+        <span class="weather-bar-item">Sunset: ${sunset}</span>
       </div>
     `;
 
