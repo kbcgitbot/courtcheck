@@ -33,6 +33,13 @@ async function initDb() {
     );
   `);
 
+  // Add columns that may be missing on existing databases
+  await pool.query(`
+    ALTER TABLE courts ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 7);
+    ALTER TABLE courts ADD COLUMN IF NOT EXISTS longitude DECIMAL(10, 7);
+    ALTER TABLE courts ADD COLUMN IF NOT EXISTS has_lights BOOLEAN DEFAULT false;
+  `);
+
   // Backfill coordinates for existing courts missing them
   await pool.query(`
     UPDATE courts SET latitude = v.lat, longitude = v.lng
