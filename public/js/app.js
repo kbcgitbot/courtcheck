@@ -20,7 +20,11 @@ async function loadFilters() {
   });
 
   allCities = data.cities;
+
+  // Default to Arlington, VA
+  stateSelect.value = 'VA';
   populateCities();
+  citySelect.value = 'Arlington';
 }
 
 function populateCities() {

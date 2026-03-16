@@ -81,10 +81,22 @@ body {
   display: block;
 }
 
+.header-title-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
 .header-title {
   font-size: 22px;
   font-weight: 700;
   color: white;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--green-400);
 }
 
 .header h1 span {
