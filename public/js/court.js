@@ -65,7 +65,7 @@ async function loadCourt() {
   }
 
   const c = await res.json();
-  document.title = c.name + ' — CourtCheck';
+  document.title = c.name + ' — CourtChek';
 
   detailEl.innerHTML = `
     <div class="court-detail-header">

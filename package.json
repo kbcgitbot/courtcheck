@@ -1,7 +1,7 @@
 {
   "name": "courtcheck",
   "version": "1.0.0",
-  "description": "CourtCheck — crowdsourced tennis court directory and conditions reporter",
+  "description": "CourtChek — crowdsourced tennis court directory and conditions reporter",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

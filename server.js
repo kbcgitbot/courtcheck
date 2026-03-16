@@ -276,7 +276,7 @@ app.get('/court/:id', (req, res) => {
 async function start() {
   await initDb();
   app.listen(PORT, () => {
-    console.log(`CourtCheck running at http://localhost:${PORT}`);
+    console.log(`CourtChek running at http://localhost:${PORT}`);
   });
 }
 

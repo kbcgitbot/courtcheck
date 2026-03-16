@@ -1,4 +1,4 @@
--- CourtCheck PostgreSQL Schema
+-- CourtChek PostgreSQL Schema
 -- Run with: psql $DATABASE_URL -f schema.sql
 
 CREATE TABLE IF NOT EXISTS courts (

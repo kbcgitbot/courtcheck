@@ -1,4 +1,4 @@
-# CourtCheck
+# CourtChek
 
 A crowdsourced tennis court directory and conditions reporter. Find courts near you and see real-time condition reports from the community.
 
