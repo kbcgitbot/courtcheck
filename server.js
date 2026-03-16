@@ -155,16 +155,16 @@ app.post('/api/courts', async (req, res) => {
       return res.status(429).json({ error: 'You can only add 2 courts per hour. Please try again later.' });
     }
 
-    const { name, address, city, state, num_courts, surface, public_private, maps_link } = req.body;
+    const { name, address, city, state, num_courts, surface, public_private, maps_link, latitude, longitude } = req.body;
 
     if (!name || !address || !city || !state || !num_courts || !surface || !public_private) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO courts (name, address, city, state, num_courts, surface, public_private, maps_link)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-      [name, address, city, state.toUpperCase(), Number(num_courts), surface, public_private, maps_link || null]
+      `INSERT INTO courts (name, address, city, state, num_courts, surface, public_private, maps_link, latitude, longitude)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+      [name, address, city, state.toUpperCase(), Number(num_courts), surface, public_private, maps_link || null, latitude || null, longitude || null]
     );
 
     res.status(201).json({ id: rows[0].id });

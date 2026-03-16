@@ -213,6 +213,51 @@ body {
   font-size: 0.6875rem;
 }
 
+/* Court map */
+.court-map {
+  height: 400px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  z-index: 0;
+}
+
+.view-toggle {
+  display: none;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 2px solid var(--green-600);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--green-800);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+}
+
+.view-toggle:hover {
+  background: var(--green-50);
+}
+
+@media (max-width: 767px) {
+  .view-toggle {
+    display: block;
+  }
+  .court-map {
+    display: none;
+    height: calc(100vh - 200px);
+    margin-bottom: 0;
+  }
+  .court-map.mobile-visible {
+    display: block;
+  }
+  .court-list.mobile-hidden {
+    display: none;
+  }
+}
+
 .header nav {
   display: flex;
   gap: 8px;

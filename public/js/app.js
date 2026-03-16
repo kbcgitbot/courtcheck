@@ -4,9 +4,14 @@ const stateSelect = document.getElementById('filter-state');
 const citySelect = document.getElementById('filter-city');
 const searchInput = document.getElementById('filter-search');
 const courtListEl = document.getElementById('court-list');
+const courtMapEl = document.getElementById('court-map');
+const viewToggle = document.getElementById('view-toggle');
 
 let allCities = [];
 let allCourts = [];
+let map = null;
+let markers = [];
+let showingMap = true; // desktop shows both; mobile toggles
 
 async function loadFilters() {
   const res = await fetch('/api/courts/filters');
@@ -41,9 +46,10 @@ function populateCities() {
 }
 
 function timeAgo(dateStr) {
+  if (!dateStr) return '';
   const now = Date.now();
-  const then = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z')).getTime();
-  const diff = now - then;
+  const d = dateStr instanceof Date ? dateStr : new Date(typeof dateStr === 'string' && !dateStr.endsWith('Z') ? dateStr + 'Z' : dateStr);
+  const diff = now - d.getTime();
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
@@ -68,8 +74,8 @@ function statusClass(status) {
 
 function isRecent(dateStr) {
   if (!dateStr) return false;
-  const then = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z')).getTime();
-  return (Date.now() - then) < 2 * 3600000; // 2 hours
+  const d = dateStr instanceof Date ? dateStr : new Date(typeof dateStr === 'string' && !dateStr.endsWith('Z') ? dateStr + 'Z' : dateStr);
+  return (Date.now() - d.getTime()) < 2 * 3600000;
 }
 
 function getFirstPhoto(photoPathsJson) {
@@ -79,6 +85,74 @@ function getFirstPhoto(photoPathsJson) {
     return arr.length > 0 ? arr[0] : null;
   } catch { return null; }
 }
+
+function markerColor(status) {
+  if (!status) return '#9ca3af'; // gray
+  const s = status.toLowerCase();
+  if (s === 'great') return '#16a34a'; // green
+  if (s.includes('wet') || s.includes('busy')) return '#f97316'; // orange
+  if (s === 'closed' || s.includes('crack')) return '#ef4444'; // red
+  return '#9ca3af';
+}
+
+// --- Map ---
+
+function initMap() {
+  map = L.map('court-map').setView([38.8816, -77.0910], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Try geolocation
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 13),
+      () => {} // silently keep default
+    );
+  }
+}
+
+function updateMapMarkers() {
+  // Clear existing
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  const query = searchInput.value.trim().toLowerCase();
+  const courts = query
+    ? allCourts.filter(c => c.name.toLowerCase().includes(query))
+    : allCourts;
+
+  courts.forEach(c => {
+    if (!c.latitude || !c.longitude) return;
+    const color = markerColor(c.latest_status);
+    const marker = L.circleMarker([parseFloat(c.latitude), parseFloat(c.longitude)], {
+      radius: 10,
+      fillColor: color,
+      color: '#fff',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.85,
+    }).addTo(map);
+
+    const statusHtml = c.latest_status
+      ? `<strong class="${statusClass(c.latest_status)}">${esc(c.latest_status)}</strong> &middot; ${timeAgo(c.latest_report_at)}`
+      : '<em style="color:#9ca3af">No reports yet</em>';
+
+    marker.bindPopup(`
+      <div style="min-width:180px">
+        <strong style="font-size:14px">${esc(c.name)}</strong><br>
+        <span style="color:#6b7280;font-size:12px">${esc(c.city)}, ${esc(c.state)} &middot; ${esc(c.surface)} &middot; ${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}</span><br>
+        <div style="margin:6px 0">${statusHtml}</div>
+        <a href="/court/${c.id}" style="color:#16a34a;font-weight:600;font-size:13px">View Court →</a>
+      </div>
+    `);
+
+    markers.push(marker);
+  });
+}
+
+// --- Rendering ---
 
 async function loadCourts() {
   const state = stateSelect.value;
@@ -90,6 +164,7 @@ async function loadCourts() {
   const res = await fetch('/api/courts?' + params.toString());
   allCourts = await res.json();
   renderCourts();
+  if (map) updateMapMarkers();
 }
 
 function renderCourts() {
@@ -138,6 +213,8 @@ function renderCourts() {
       </div>
     </a>`;
   }).join('');
+
+  if (map) updateMapMarkers();
 }
 
 function esc(str) {
@@ -147,6 +224,30 @@ function esc(str) {
   return d.innerHTML;
 }
 
+// --- Mobile toggle ---
+
+let mobileShowMap = false;
+
+function updateMobileView() {
+  if (mobileShowMap) {
+    courtMapEl.classList.add('mobile-visible');
+    courtListEl.classList.add('mobile-hidden');
+    viewToggle.textContent = '📋 List View';
+    setTimeout(() => map && map.invalidateSize(), 50);
+  } else {
+    courtMapEl.classList.remove('mobile-visible');
+    courtListEl.classList.remove('mobile-hidden');
+    viewToggle.textContent = '🗺 Map View';
+  }
+}
+
+viewToggle.addEventListener('click', () => {
+  mobileShowMap = !mobileShowMap;
+  updateMobileView();
+});
+
+// --- Events ---
+
 stateSelect.addEventListener('change', () => {
   populateCities();
   loadCourts();
@@ -155,5 +256,8 @@ stateSelect.addEventListener('change', () => {
 citySelect.addEventListener('change', loadCourts);
 searchInput.addEventListener('input', renderCourts);
 
+// --- Init ---
+
+initMap();
 loadFilters();
 loadCourts();

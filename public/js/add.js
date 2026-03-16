@@ -21,6 +21,8 @@ form.addEventListener('submit', async (e) => {
     surface: form.surface.value,
     public_private: form.public_private.value,
     maps_link: form.maps_link.value.trim() || null,
+    latitude: form.latitude.value ? parseFloat(form.latitude.value) : null,
+    longitude: form.longitude.value ? parseFloat(form.longitude.value) : null,
     website: form.website ? form.website.value : ''
   };
 
