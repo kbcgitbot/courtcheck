@@ -1,0 +1,7 @@
+node_modules/
+.env
+uploads/*
+!uploads/.gitkeep
+courtcheck.db
+courtcheck.db-shm
+courtcheck.db-wal

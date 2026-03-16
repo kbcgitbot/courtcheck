@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourtCheck — Tennis Court Directory</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1><a href="/">Court<span>Check</span></a></h1>
+      <nav>
+        <a href="/add.html" class="nav-add">+ Add Court</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h2 class="page-title">Tennis Court Directory</h2>
+
+    <div class="filters">
+      <input type="text" id="filter-search" placeholder="Search by court name..." autocomplete="off">
+      <select id="filter-state">
+        <option value="">All States</option>
+      </select>
+      <select id="filter-city">
+        <option value="">All Cities</option>
+      </select>
+    </div>
+
+    <div id="court-list" class="court-list">
+      <div class="loading">Loading courts...</div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

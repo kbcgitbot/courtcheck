@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(rm:*)",
+      "Bash(node:*)",
+      "Bash(npm start:*)",
+      "Bash(curl:*)",
+      "Bash(xdg-open:*)",
+      "WebSearch",
+      "WebFetch(domain:dpr.dc.gov)",
+      "WebFetch(domain:www.arlington-tennis.com)",
+      "WebFetch(domain:www.globaltennisnetwork.com)",
+      "WebFetch(domain:www.nps.gov)",
+      "WebFetch(domain:www.arlingtonva.us)",
+      "WebFetch(domain:mytennislessons.com)",
+      "WebFetch(domain:www.tennisdc.com)",
+      "WebFetch(domain:sites.google.com)",
+      "WebFetch(domain:novatennisleague.com)",
+      "WebFetch(domain:tennisround.com)",
+      "WebFetch(domain:www.actatennis.org)",
+      "WebFetch(domain:www.tenniscentral.us)"
+    ]
+  }
+}

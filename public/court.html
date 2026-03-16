@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Court Details — CourtCheck</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1><a href="/">Court<span>Check</span></a></h1>
+      <nav>
+        <a href="/">Directory</a>
+        <a href="/add.html" class="nav-add">+ Add Court</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="court-detail">
+      <div class="loading">Loading court details...</div>
+    </div>
+
+    <div id="report-form-container"></div>
+
+    <section class="reports-section" id="reports-section">
+      <h3>Condition Reports</h3>
+      <div id="reports-list">
+        <div class="loading">Loading reports...</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="lightbox" id="lightbox">
+    <img src="" alt="Full size photo" id="lightbox-img">
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/court.js"></script>
+</body>
+</html>
