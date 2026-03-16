@@ -141,6 +141,10 @@ body {
   white-space: nowrap;
 }
 
+.rain-low { color: var(--green-700); }
+.rain-possible { color: var(--orange-500); }
+.rain-likely { color: var(--red-500); }
+
 /* Hourly forecast */
 .hourly-forecast {
   background: var(--green-800);

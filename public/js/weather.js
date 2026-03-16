@@ -53,6 +53,41 @@ function formatSunTime(isoStr) {
   return h + ':' + m + ' ' + ampm;
 }
 
+function maxRainInRange(probs, start, count) {
+  let max = 0;
+  for (let i = start; i < start + count && i < probs.length; i++) {
+    if (probs[i] > max) max = probs[i];
+  }
+  return max;
+}
+
+function maxRainUntilMidnight(probs, times, startIdx) {
+  let max = 0;
+  const today = new Date(times[startIdx]).toISOString().slice(0, 10);
+  for (let i = startIdx; i < probs.length; i++) {
+    if (!times[i].startsWith(today)) break;
+    if (probs[i] > max) max = probs[i];
+  }
+  return max;
+}
+
+function rainClass(pct) {
+  if (pct <= 20) return 'rain-low';
+  if (pct <= 50) return 'rain-possible';
+  return 'rain-likely';
+}
+
+function rainLabel(pct) {
+  if (pct <= 20) return 'Low';
+  if (pct <= 50) return 'Possible';
+  return 'Likely';
+}
+
+function rainHtml(label, pct) {
+  const cls = rainClass(pct);
+  return `<span class="weather-bar-item">${label}: <strong class="${cls}">${pct}% rain — ${rainLabel(pct)}</strong></span>`;
+}
+
 async function loadWeather() {
   try {
     const res = await fetch(WEATHER_URL);
@@ -63,7 +98,6 @@ async function loadWeather() {
     const currentHour = now.toISOString().slice(0, 13);
     let currentIdx = data.hourly.time.findIndex(t => t.startsWith(currentHour));
     if (currentIdx === -1) {
-      // Fallback: find closest hour
       const nowMs = now.getTime();
       let minDiff = Infinity;
       data.hourly.time.forEach((t, i) => {
@@ -76,6 +110,11 @@ async function loadWeather() {
     const currentCode = data.hourly.weathercode[currentIdx];
     const sunrise = formatSunTime(data.daily.sunrise[0]);
     const sunset = formatSunTime(data.daily.sunset[0]);
+    const probs = data.hourly.precipitation_probability;
+
+    const rain4h = maxRainInRange(probs, currentIdx, 4);
+    const rain8h = maxRainInRange(probs, currentIdx, 8);
+    const rainTonight = maxRainUntilMidnight(probs, data.hourly.time, currentIdx);
 
     // Render weather bar
     const barEl = document.getElementById('weather-bar');
@@ -83,6 +122,9 @@ async function loadWeather() {
       <div class="weather-bar-inner">
         <span class="weather-bar-location">📍 Arlington, VA</span>
         <span class="weather-bar-item">${wmoToEmoji(currentCode)} ${currentTemp}°F — ${wmoToLabel(currentCode)}</span>
+        ${rainHtml('Next 4hrs', rain4h)}
+        ${rainHtml('Next 8hrs', rain8h)}
+        ${rainHtml('Tonight', rainTonight)}
         <span class="weather-bar-item">🌅 ${sunrise}</span>
         <span class="weather-bar-item">🌇 ${sunset}</span>
       </div>
