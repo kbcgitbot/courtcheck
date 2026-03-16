@@ -132,6 +132,10 @@ async function loadCourt() {
             <input type="file" name="photos" accept="image/*" multiple id="photo-input">
           </div>
         </div>
+        <div class="form-group" style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+          <label for="website">Leave this empty</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
         <button type="submit" class="btn btn-primary">Submit Report</button>
       </form>
     </div>

@@ -20,7 +20,8 @@ form.addEventListener('submit', async (e) => {
     num_courts: Number(form.num_courts.value),
     surface: form.surface.value,
     public_private: form.public_private.value,
-    maps_link: form.maps_link.value.trim() || null
+    maps_link: form.maps_link.value.trim() || null,
+    website: form.website ? form.website.value : ''
   };
 
   if (!data.name || !data.address || !data.city || !data.state || !data.num_courts || !data.surface || !data.public_private) {

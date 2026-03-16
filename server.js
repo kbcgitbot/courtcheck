@@ -33,6 +33,50 @@ const upload = multer({
   }
 });
 
+// --- Spam protection ---
+
+// Honeypot check — if the hidden "website" field is filled, it's a bot
+function honeypotCheck(req, res) {
+  if (req.body && req.body.website) {
+    return true; // is spam
+  }
+  return false;
+}
+
+// In-memory rate limiter
+const rateLimits = new Map(); // ip -> { reports: [timestamps], courts: [timestamps] }
+const HOUR = 3600000;
+
+function rateLimit(req, type) {
+  const ip = req.ip;
+  if (!rateLimits.has(ip)) {
+    rateLimits.set(ip, { reports: [], courts: [] });
+  }
+  const bucket = rateLimits.get(ip);
+  const now = Date.now();
+  // Prune old entries
+  bucket[type] = bucket[type].filter(t => now - t < HOUR);
+
+  const maxPerHour = type === 'courts' ? 2 : 5;
+  if (bucket[type].length >= maxPerHour) {
+    return false; // rate limited
+  }
+  bucket[type].push(now);
+  return true; // allowed
+}
+
+// Clean up stale rate limit entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of rateLimits) {
+    bucket.reports = bucket.reports.filter(t => now - t < HOUR);
+    bucket.courts = bucket.courts.filter(t => now - t < HOUR);
+    if (bucket.reports.length === 0 && bucket.courts.length === 0) {
+      rateLimits.delete(ip);
+    }
+  }
+}, 600000);
+
 // --- API Routes ---
 
 // Get all courts with optional filters and latest report
@@ -106,6 +150,11 @@ app.get('/api/courts/:id', async (req, res) => {
 // Create court
 app.post('/api/courts', async (req, res) => {
   try {
+    if (honeypotCheck(req, res)) return res.status(201).json({ id: 0 });
+    if (!rateLimit(req, 'courts')) {
+      return res.status(429).json({ error: 'You can only add 2 courts per hour. Please try again later.' });
+    }
+
     const { name, address, city, state, num_courts, surface, public_private, maps_link } = req.body;
 
     if (!name || !address || !city || !state || !num_courts || !surface || !public_private) {
@@ -148,6 +197,11 @@ app.get('/api/courts/:id/reports', async (req, res) => {
 // Create report with photos
 app.post('/api/courts/:id/reports', upload.array('photos', 3), async (req, res) => {
   try {
+    if (honeypotCheck(req, res)) return res.status(201).json({ id: 0 });
+    if (!rateLimit(req, 'reports')) {
+      return res.status(429).json({ error: 'You can only submit 5 reports per hour. Please try again later.' });
+    }
+
     const courtId = req.params.id;
     const { rows: courtRows } = await pool.query('SELECT id FROM courts WHERE id = $1', [courtId]);
     if (courtRows.length === 0) return res.status(404).json({ error: 'Court not found' });
