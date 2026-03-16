@@ -33,6 +33,60 @@ async function initDb() {
     );
   `);
 
+  // Backfill coordinates for existing courts missing them
+  await pool.query(`
+    UPDATE courts SET latitude = v.lat, longitude = v.lng
+    FROM (VALUES
+      ('Virginia Highlands Park', 38.8486, -77.0574),
+      ('Bluemont Park', 38.8773, -77.1090),
+      ('Gunston Park', 38.8399, -77.0629),
+      ('Towers Park', 38.8868, -77.0938),
+      ('Glebe Road Park', 38.9021, -77.1019),
+      ('Quincy Park', 38.9015, -77.0938),
+      ('Barcroft Park', 38.8432, -77.1043),
+      ('Bon Air Park', 38.8871, -77.1154),
+      ('Lyon Village Park', 38.8938, -77.0938),
+      ('Banneker Tennis Courts', 38.9117, -77.0232),
+      ('Thomas Jefferson Park', 38.8558, -77.0870),
+      ('Fort Scott Park', 38.8430, -77.0630),
+      ('Marcey Road Park', 38.8978, -77.0730),
+      ('Walter Reed Community Center', 38.8440, -77.0900),
+      ('Jennie Dean Park', 38.8445, -77.0863),
+      ('Carver Community Center', 38.8553, -77.0650),
+      ('Hayes Park', 38.8870, -77.1010),
+      ('Maury Park', 38.8880, -77.1025),
+      ('Tuckahoe Park', 38.8930, -77.1310),
+      ('Stratford Park', 38.8962, -77.1115),
+      ('Madison Manor Park', 38.9000, -77.1365),
+      ('Langston-Brown Community Center', 38.8920, -77.0960),
+      ('Four Mile Run Park', 38.8410, -77.0920),
+      ('Takoma Rec Center', 38.9630, -77.0220),
+      ('Fort Stevens Park', 38.9580, -77.0310),
+      ('Lafayette Rec Center', 38.9610, -77.0710),
+      ('Palisades Community Center', 38.9250, -77.1010),
+      ('Hearst Park', 38.9500, -77.0600),
+      ('Fort Reno Park', 38.9530, -77.0670),
+      ('Chevy Chase Rec Center', 38.9620, -77.0640),
+      ('Forest Hills Park', 38.9480, -77.0590),
+      ('Friendship Turtle Park', 38.9440, -77.0610),
+      ('Georgetown Rec Center', 38.9105, -77.0630),
+      ('Hardy Rec Center', 38.9070, -77.0680),
+      ('Powell Recreation Center', 38.9300, -77.0360),
+      ('Raymond Playground', 38.9350, -77.0240),
+      ('Reed Park', 38.9190, -77.0420),
+      ('Roosevelt HS Courts', 38.9510, -77.0310),
+      ('Volta Park', 38.9100, -77.0640),
+      ('Bruce Monroe Community Park', 38.9280, -77.0250),
+      ('Kennedy Rec Center', 38.9090, -77.0220),
+      ('Rock Creek Tennis Center', 38.9560, -77.0370),
+      ('Montrose Park', 38.9120, -77.0590),
+      ('Francis Field', 38.9060, -77.0490),
+      ('Rose Park', 38.9080, -77.0580),
+      ('Park Road Courts', 38.9380, -77.0500)
+    ) AS v(court_name, lat, lng)
+    WHERE courts.name = v.court_name AND courts.latitude IS NULL
+  `);
+
   const { rows } = await pool.query('SELECT COUNT(*) AS c FROM courts');
   if (parseInt(rows[0].c) > 0) return;
 
@@ -42,29 +96,29 @@ async function initDb() {
 
     // [name, address, city, state, num_courts, surface, public_private, maps_link, lat, lng]
     const courts = [
-      ['Bluemont Park', '601 N Manchester St', 'Arlington', 'VA', 9, 'hard', 'public', 'https://maps.google.com/?q=Bluemont+Park+Tennis+Arlington+VA', 38.8714, -77.1128],
-      ['Quincy Park', '1021 N Quincy St', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Quincy+Park+Tennis+Arlington+VA', 38.8835, -77.1078],
-      ['Virginia Highlands Park', '1600 S Hayes St', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Virginia+Highlands+Park+Tennis+Arlington+VA', 38.8575, -77.0596],
-      ['Barcroft Park', '4200 S Four Mile Run Dr', 'Arlington', 'VA', 5, 'hard', 'public', 'https://maps.google.com/?q=Barcroft+Park+Tennis+Arlington+VA', 38.8525, -77.1050],
-      ['Towers Park', '801 S Scott St', 'Arlington', 'VA', 4, 'hard', 'public', 'https://maps.google.com/?q=Towers+Park+Tennis+Arlington+VA', 38.8608, -77.0753],
+      ['Bluemont Park', '601 N Manchester St', 'Arlington', 'VA', 9, 'hard', 'public', 'https://maps.google.com/?q=Bluemont+Park+Tennis+Arlington+VA', 38.8773, -77.1090],
+      ['Quincy Park', '1021 N Quincy St', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Quincy+Park+Tennis+Arlington+VA', 38.9015, -77.0938],
+      ['Virginia Highlands Park', '1600 S Hayes St', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Virginia+Highlands+Park+Tennis+Arlington+VA', 38.8486, -77.0574],
+      ['Barcroft Park', '4200 S Four Mile Run Dr', 'Arlington', 'VA', 5, 'hard', 'public', 'https://maps.google.com/?q=Barcroft+Park+Tennis+Arlington+VA', 38.8432, -77.1043],
+      ['Towers Park', '801 S Scott St', 'Arlington', 'VA', 4, 'hard', 'public', 'https://maps.google.com/?q=Towers+Park+Tennis+Arlington+VA', 38.8868, -77.0938],
       ['Thomas Jefferson Park', '3501 2nd St S', 'Arlington', 'VA', 4, 'hard', 'public', 'https://maps.google.com/?q=Thomas+Jefferson+Park+Tennis+Arlington+VA', 38.8558, -77.0870],
       ['Fort Scott Park', '2800 Fort Scott Dr', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Fort+Scott+Park+Tennis+Arlington+VA', 38.8430, -77.0630],
-      ['Gunston Park', '1200 28th St S', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Gunston+Park+Tennis+Arlington+VA', 38.8490, -77.0825],
+      ['Gunston Park', '1200 28th St S', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Gunston+Park+Tennis+Arlington+VA', 38.8399, -77.0629],
       ['Marcey Road Park', '2800 N Marcey Rd', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Marcey+Road+Park+Tennis+Arlington+VA', 38.8978, -77.0730],
-      ['Glebe Road Park', '4211 N Old Glebe Rd', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Glebe+Road+Park+Tennis+Arlington+VA', 38.8960, -77.1210],
+      ['Glebe Road Park', '4211 N Old Glebe Rd', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Glebe+Road+Park+Tennis+Arlington+VA', 38.9021, -77.1019],
       ['Walter Reed Community Center', '2909 16th St S', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Walter+Reed+Community+Center+Tennis+Arlington+VA', 38.8440, -77.0900],
       ['Jennie Dean Park', '3630 27th St S', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Jennie+Dean+Park+Tennis+Arlington+VA', 38.8445, -77.0863],
       ['Carver Community Center', '1415 S Queen St', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Carver+Community+Center+Tennis+Arlington+VA', 38.8553, -77.0650],
-      ['Lyon Village Park', '1998 N Highland St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Lyon+Village+Park+Tennis+Arlington+VA', 38.8890, -77.0940],
+      ['Lyon Village Park', '1998 N Highland St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Lyon+Village+Park+Tennis+Arlington+VA', 38.8938, -77.0938],
       ['Hayes Park', '1510 N Lincoln St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Hayes+Park+Tennis+Arlington+VA', 38.8870, -77.1010],
-      ['Bon Air Park', '850 N Lexington St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Bon+Air+Park+Tennis+Arlington+VA', 38.8815, -77.1150],
+      ['Bon Air Park', '850 N Lexington St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Bon+Air+Park+Tennis+Arlington+VA', 38.8871, -77.1154],
       ['Maury Park', '3558 N Wilson Blvd', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Maury+Park+Tennis+Arlington+VA', 38.8880, -77.1025],
       ['Tuckahoe Park', '2409 N Tuckahoe St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Tuckahoe+Park+Tennis+Arlington+VA', 38.8930, -77.1310],
       ['Stratford Park', '4264 23rd St N', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Stratford+Park+Tennis+Arlington+VA', 38.8962, -77.1115],
       ['Madison Manor Park', '6225 12th Rd N', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Madison+Manor+Park+Tennis+Arlington+VA', 38.9000, -77.1365],
       ['Langston-Brown Community Center', '2121 N Culpeper St', 'Arlington', 'VA', 1, 'hard', 'public', 'https://maps.google.com/?q=Langston-Brown+Community+Center+Arlington+VA', 38.8920, -77.0960],
       ['Four Mile Run Park', '3700 S Four Mile Run Dr', 'Arlington', 'VA', 1, 'hard', 'public', 'https://maps.google.com/?q=Four+Mile+Run+Park+Tennis+Arlington+VA', 38.8410, -77.0920],
-      ['Banneker Tennis Courts', '2500 Georgia Ave NW', 'Washington', 'DC', 8, 'hard', 'public', 'https://maps.google.com/?q=Banneker+Tennis+Courts+Washington+DC', 38.9220, -77.0240],
+      ['Banneker Tennis Courts', '2500 Georgia Ave NW', 'Washington', 'DC', 8, 'hard', 'public', 'https://maps.google.com/?q=Banneker+Tennis+Courts+Washington+DC', 38.9117, -77.0232],
       ['Takoma Rec Center', '290 Van Buren St NW', 'Washington', 'DC', 6, 'hard', 'public', 'https://maps.google.com/?q=Takoma+Recreation+Center+Tennis+Washington+DC', 38.9630, -77.0220],
       ['Fort Stevens Park', '1327 Van Buren St NW', 'Washington', 'DC', 4, 'hard', 'public', 'https://maps.google.com/?q=Fort+Stevens+Park+Tennis+Washington+DC', 38.9580, -77.0310],
       ['Lafayette Rec Center', '5900 33rd St NW', 'Washington', 'DC', 4, 'hard', 'public', 'https://maps.google.com/?q=Lafayette+Recreation+Center+Tennis+Washington+DC', 38.9610, -77.0710],

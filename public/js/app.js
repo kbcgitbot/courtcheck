@@ -98,16 +98,26 @@ function markerColor(status) {
 // --- Map ---
 
 function initMap() {
-  map = L.map('court-map').setView([38.8816, -77.0910], 13);
+  map = L.map('court-map').setView([38.8816, -77.0910], 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
   }).addTo(map);
 
-  // Try geolocation
+  // Show user location as blue dot
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 13),
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        L.circleMarker([latitude, longitude], {
+          radius: 8,
+          fillColor: '#3b82f6',
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9,
+        }).addTo(map).bindPopup('You are here');
+      },
       () => {} // silently keep default
     );
   }
