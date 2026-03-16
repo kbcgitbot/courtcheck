@@ -1,0 +1,30 @@
+<svg width="560" height="340" viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer court surround -->
+  <rect x="0" y="0" width="560" height="340" rx="12" fill="#1e5c1e"/>
+  <!-- Court surface -->
+  <rect x="50" y="40" width="460" height="260" rx="4" fill="#2e7d2e"/>
+  <!-- Court boundary -->
+  <rect x="50" y="40" width="460" height="260" rx="4" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.5"/>
+  <!-- Center line -->
+  <line x1="280" y1="40" x2="280" y2="300" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+  <!-- Service lines -->
+  <line x1="50" y1="170" x2="280" y2="170" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+  <line x1="280" y1="170" x2="510" y2="170" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+  <!-- Service box centers -->
+  <line x1="165" y1="100" x2="165" y2="240" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+  <line x1="395" y1="100" x2="395" y2="240" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+  <!-- Net -->
+  <line x1="50" y1="170" x2="510" y2="170" stroke="rgba(255,255,255,0.95)" stroke-width="3"/>
+  <rect x="46" y="164" width="8" height="12" rx="1" fill="rgba(255,255,255,0.9)"/>
+  <rect x="506" y="164" width="8" height="12" rx="1" fill="rgba(255,255,255,0.9)"/>
+  <!-- Tennis ball -->
+  <circle cx="145" cy="125" r="52" fill="#c8e63a"/>
+  <path d="M103 88 Q145 115 103 162" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M187 88 Q145 115 187 162" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Checkmark -->
+  <polyline points="120,127 138,147 173,102" fill="none" stroke="#2d7a2d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Text -->
+  <text x="215" y="108" font-family="system-ui, sans-serif" font-weight="700" font-size="52" fill="white">Court</text>
+  <text x="215" y="162" font-family="system-ui, sans-serif" font-weight="700" font-size="52" fill="#c8e63a">Check</text>
+  <text x="215" y="190" font-family="system-ui, sans-serif" font-weight="400" font-size="15" fill="rgba(255,255,255,0.7)">crowdsourced court conditions</text>
+</svg>

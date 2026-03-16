@@ -70,6 +70,14 @@ body {
 .header h1 a {
   color: white;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  height: 60px;
+  width: auto;
+  display: block;
 }
 
 .header h1 span {

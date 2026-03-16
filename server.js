@@ -185,6 +185,35 @@ app.post('/api/reports/:id/flag', async (req, res) => {
   }
 });
 
+// robots.txt
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(
+    'User-agent: *\nAllow: /\nSitemap: https://courtcheck-production.up.railway.app/sitemap.xml\n'
+  );
+});
+
+// Dynamic sitemap
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const base = 'https://courtcheck-production.up.railway.app';
+    const { rows } = await pool.query('SELECT id FROM courts ORDER BY id');
+    const urls = [
+      `  <url><loc>${base}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+      ...rows.map(r =>
+        `  <url><loc>${base}/court/${r.id}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`
+      ),
+    ];
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>`;
+    res.type('application/xml').send(xml);
+  } catch (err) {
+    console.error('GET /sitemap.xml error:', err);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
 // SPA fallback — serve court.html for /court/:id routes
 app.get('/court/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'court.html'));
