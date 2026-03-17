@@ -97,7 +97,35 @@ setInterval(() => {
   }
 }, 600000);
 
+// --- Geocoding helper ---
+
+async function geocodeAddress(address, city, state) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const query = encodeURIComponent(`${address}, ${city}, ${state}`);
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status === 'OK' && data.results.length > 0) {
+      const { lat, lng } = data.results[0].geometry.location;
+      console.log(`[geocode] ${address}, ${city}, ${state} -> ${lat}, ${lng}`);
+      return { lat, lng };
+    }
+    console.log(`[geocode] No result for: ${address}, ${city}, ${state} (${data.status})`);
+    return null;
+  } catch (err) {
+    console.error('[geocode] Error:', err.message);
+    return null;
+  }
+}
+
 // --- API Routes ---
+
+// Config endpoint — passes Google Maps API key to frontend
+app.get('/api/config', (req, res) => {
+  res.json({ googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '' });
+});
 
 // Get all courts with optional filters and latest report
 app.get('/api/courts', async (req, res) => {
@@ -181,10 +209,18 @@ app.post('/api/courts', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Auto-geocode if no coordinates provided
+    let lat = latitude || null;
+    let lng = longitude || null;
+    if (!lat || !lng) {
+      const geo = await geocodeAddress(address, city, state);
+      if (geo) { lat = geo.lat; lng = geo.lng; }
+    }
+
     const { rows } = await pool.query(
       `INSERT INTO courts (name, address, city, state, num_courts, surface, public_private, maps_link, latitude, longitude, has_lights)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-      [name, address, city, state.toUpperCase(), Number(num_courts), surface, public_private, maps_link || null, latitude || null, longitude || null, has_lights || false]
+      [name, address, city, state.toUpperCase(), Number(num_courts), surface, public_private, maps_link || null, lat, lng, has_lights || false]
     );
 
     res.status(201).json({ id: rows[0].id });

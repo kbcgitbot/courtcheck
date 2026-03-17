@@ -96,6 +96,26 @@ async function initDb() {
     AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — excellent public courts.');
   `);
 
+  // Auto-geocode courts missing coordinates (requires GOOGLE_MAPS_API_KEY)
+  if (process.env.GOOGLE_MAPS_API_KEY) {
+    const { rows: missing } = await pool.query('SELECT id, address, city, state FROM courts WHERE latitude IS NULL OR longitude IS NULL');
+    for (const court of missing) {
+      try {
+        const query = encodeURIComponent(`${court.address}, ${court.city}, ${court.state}`);
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 'OK' && data.results.length > 0) {
+          const { lat, lng } = data.results[0].geometry.location;
+          await pool.query('UPDATE courts SET latitude = $1, longitude = $2 WHERE id = $3', [lat, lng, court.id]);
+          console.log(`[geocode] Court ${court.id}: ${court.address} -> ${lat}, ${lng}`);
+        }
+      } catch (err) {
+        console.error(`[geocode] Failed for court ${court.id}:`, err.message);
+      }
+    }
+  }
+
   const { rows } = await pool.query('SELECT COUNT(*) AS c FROM courts');
   if (parseInt(rows[0].c) > 0) return;
 

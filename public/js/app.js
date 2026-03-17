@@ -12,7 +12,16 @@ let allCities = [];
 let allCourts = [];
 let map = null;
 let markers = [];
-let showingMap = true; // desktop shows both; mobile toggles
+let infoWindow = null;
+
+// Tennis ball SVG data URL for map markers
+const TENNIS_BALL_SVG = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' +
+  '<circle cx="16" cy="16" r="15" fill="#c8e63a" stroke="#a3b829" stroke-width="1.5"/>' +
+  '<path d="M5 6 Q16 14 5 26" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>' +
+  '<path d="M27 6 Q16 14 27 26" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>' +
+  '</svg>'
+);
 
 async function loadFilters() {
   const res = await fetch('/api/courts/filters');
@@ -87,53 +96,43 @@ function getFirstPhoto(photoPathsJson) {
   } catch { return null; }
 }
 
-function markerColor(status) {
-  if (!status) return '#9ca3af'; // gray
-  const s = status.toLowerCase();
-  if (s === 'great') return '#16a34a'; // green
-  if (s.includes('wet') || s.includes('busy')) return '#f97316'; // orange
-  if (s === 'closed' || s.includes('crack')) return '#ef4444'; // red
-  return '#9ca3af';
-}
+// --- Google Maps ---
 
-// --- Map ---
+async function loadGoogleMaps() {
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+    if (!config.googleMapsApiKey) {
+      console.warn('No Google Maps API key configured');
+      courtMapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9ca3af;font-size:0.875rem;">Map requires Google Maps API key</div>';
+      return;
+    }
 
-function tennisBallIcon(hasLights) {
-  const size = hasLights ? 28 : 24;
-  const glow = hasLights ? 'box-shadow: 0 0 8px 2px rgba(234,179,8,0.6);' : '';
-  return L.divIcon({
-    className: '',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#c8e63a;border:2px solid #a3b829;position:relative;overflow:hidden;${glow}"><div style="position:absolute;top:15%;left:-10%;width:55%;height:70%;border:2px solid rgba(255,255,255,0.7);border-radius:50%;border-right:none;"></div><div style="position:absolute;top:15%;right:-10%;width:55%;height:70%;border:2px solid rgba(255,255,255,0.7);border-radius:50%;border-left:none;"></div></div>`,
-  });
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}`;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  } catch (err) {
+    console.error('Failed to load Google Maps:', err);
+  }
 }
 
 function initMap() {
-  map = L.map('court-map').setView([38.8816, -77.0910], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 19,
-  }).addTo(map);
+  if (typeof google === 'undefined' || !google.maps) return;
 
-  // Show user location as blue dot
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        L.circleMarker([latitude, longitude], {
-          radius: 8,
-          fillColor: '#3b82f6',
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.9,
-        }).addTo(map).bindPopup('You are here');
-      },
-      () => {} // silently keep default
-    );
-  }
+  map = new google.maps.Map(courtMapEl, {
+    center: { lat: 38.8816, lng: -77.0910 },
+    zoom: 13,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+  });
+
+  infoWindow = new google.maps.InfoWindow();
 }
 
 function getFilteredCourts() {
@@ -147,30 +146,45 @@ function getFilteredCourts() {
 }
 
 function updateMapMarkers() {
-  // Clear existing
-  markers.forEach(m => map.removeLayer(m));
+  if (!map) return;
+
+  // Clear existing markers
+  markers.forEach(m => m.setMap(null));
   markers = [];
 
   const courts = getFilteredCourts();
 
   courts.forEach(c => {
     if (!c.latitude || !c.longitude) return;
-    const marker = L.marker([parseFloat(c.latitude), parseFloat(c.longitude)], {
-      icon: tennisBallIcon(c.has_lights),
-    }).addTo(map);
+
+    const marker = new google.maps.Marker({
+      position: { lat: parseFloat(c.latitude), lng: parseFloat(c.longitude) },
+      map: map,
+      title: c.name,
+      icon: {
+        url: TENNIS_BALL_SVG,
+        scaledSize: new google.maps.Size(32, 32),
+        anchor: new google.maps.Point(16, 16),
+      },
+    });
 
     const statusHtml = c.latest_status
       ? `<strong class="${statusClass(c.latest_status)}">${esc(c.latest_status)}</strong> &middot; ${timeAgo(c.latest_report_at)}`
       : '<em style="color:#9ca3af">No reports yet</em>';
 
-    marker.bindPopup(`
-      <div style="min-width:180px">
+    const content = `
+      <div style="min-width:180px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
         <strong style="font-size:14px">${esc(c.name)}</strong><br>
         <span style="color:#6b7280;font-size:12px">${esc(c.city)}, ${esc(c.state)} &middot; ${esc(c.surface)} &middot; ${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}${c.has_lights ? ' &middot; Lights' : ''}</span><br>
         <div style="margin:6px 0">${statusHtml}</div>
-        <a href="/court/${c.id}" style="color:#16a34a;font-weight:600;font-size:13px">View Court →</a>
+        <a href="/court/${c.id}" style="color:#16a34a;font-weight:600;font-size:13px;text-decoration:none;">View Court &rarr;</a>
       </div>
-    `);
+    `;
+
+    marker.addListener('click', () => {
+      infoWindow.setContent(content);
+      infoWindow.open(map, marker);
+    });
 
     markers.push(marker);
   });
@@ -188,7 +202,7 @@ async function loadCourts() {
   const res = await fetch('/api/courts?' + params.toString());
   allCourts = await res.json();
   renderCourts();
-  if (map) updateMapMarkers();
+  updateMapMarkers();
 }
 
 function renderCourts() {
@@ -236,7 +250,7 @@ function renderCourts() {
     </a>`;
   }).join('');
 
-  if (map) updateMapMarkers();
+  updateMapMarkers();
 }
 
 function esc(str) {
@@ -255,7 +269,10 @@ function updateMobileView() {
     courtMapEl.classList.add('mobile-visible');
     courtListEl.classList.add('mobile-hidden');
     viewToggle.textContent = '📋 List View';
-    setTimeout(() => map && map.invalidateSize(), 50);
+    // Trigger Google Maps resize when showing
+    setTimeout(() => {
+      if (map) google.maps.event.trigger(map, 'resize');
+    }, 50);
   } else {
     courtMapEl.classList.remove('mobile-visible');
     courtListEl.classList.remove('mobile-hidden');
@@ -281,7 +298,12 @@ lightsFilter.addEventListener('change', renderCourts);
 
 // --- Init ---
 
-initMap();
-updateMobileView();
-loadFilters();
-loadCourts();
+async function init() {
+  await loadGoogleMaps();
+  initMap();
+  updateMobileView();
+  loadFilters();
+  loadCourts();
+}
+
+init();
