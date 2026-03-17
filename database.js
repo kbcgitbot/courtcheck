@@ -56,9 +56,12 @@ async function initDb() {
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
   `);
 
-  // Reset all coordinates so Google Geocoding can re-geocode from addresses
-  await pool.query('UPDATE courts SET latitude = NULL, longitude = NULL');
-  console.log('[geocode] Reset all court coordinates to NULL for re-geocoding');
+  // Fix Georgetown Rec Center address and reset its coordinates for re-geocoding
+  await pool.query(`
+    UPDATE courts SET address = '3350 Q St NW, Washington, DC 20007', latitude = NULL, longitude = NULL
+    WHERE name ILIKE '%Georgetown Rec%';
+  `);
+  console.log('[geocode] Reset Georgetown Rec Center for re-geocoding');
 
   // Seed sample photo reports (idempotent — only inserts if not already present)
   await pool.query(`
