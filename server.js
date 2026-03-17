@@ -33,7 +33,7 @@ if (useCloudinary) {
     },
   });
   upload = multer({ storage: cloudStorage, limits: { fileSize: 5 * 1024 * 1024 } });
-  console.log('Photo uploads: Cloudinary');
+  console.log('[startup] Photo uploads: CLOUDINARY (cloud: ' + process.env.CLOUDINARY_CLOUD_NAME + ')');
 } else {
   const diskStorage = multer.diskStorage({
     destination: path.join(__dirname, 'uploads'),
@@ -50,7 +50,7 @@ if (useCloudinary) {
       cb(null, allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype));
     }
   });
-  console.log('Photo uploads: local disk');
+  console.log('[startup] Photo uploads: LOCAL DISK (Cloudinary env vars not set — photos will be lost on redeploy)');
 }
 
 // --- Spam protection ---
@@ -251,9 +251,14 @@ app.post('/api/courts/:id/reports', (req, res, next) => {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    // Cloudinary files have .path as URL; local disk files need /uploads/ prefix
-    const photoPaths = req.files ? req.files.map(f => f.path || ('/uploads/' + f.filename)) : [];
-    console.log(`[report] Photos: ${JSON.stringify(photoPaths)}`);
+    // Extract photo URLs — Cloudinary sets f.path to full https URL; local disk needs prefix
+    const photoPaths = req.files ? req.files.map(f => {
+      const url = f.path || ('/uploads/' + f.filename);
+      console.log(`[report] Photo file object keys: ${Object.keys(f).join(', ')}`);
+      console.log(`[report] Photo URL: ${url}`);
+      return url;
+    }) : [];
+    console.log(`[report] All photo paths: ${JSON.stringify(photoPaths)}`);
 
     const { rows } = await pool.query(
       `INSERT INTO reports (court_id, status, comment, photo_paths)
