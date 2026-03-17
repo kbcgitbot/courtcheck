@@ -2,8 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('cloudinary').v2;
 const { pool, initDb } = require('./database');
 
 const app = express();
@@ -12,28 +10,48 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Cloudinary config
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Photo upload storage — use Cloudinary if configured, else local disk
+const useCloudinary = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+let upload;
 
-// Multer + Cloudinary storage
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'courtchek',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }],
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+if (useCloudinary) {
+  const cloudinary = require('cloudinary').v2;
+  const { CloudinaryStorage } = require('multer-storage-cloudinary');
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  const cloudStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: 'courtchek',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+      transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }],
+    },
+  });
+  upload = multer({ storage: cloudStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+  console.log('Photo uploads: Cloudinary');
+} else {
+  const diskStorage = multer.diskStorage({
+    destination: path.join(__dirname, 'uploads'),
+    filename: (req, file, cb) => {
+      const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
+      cb(null, unique + path.extname(file.originalname));
+    }
+  });
+  upload = multer({
+    storage: diskStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowed = /jpeg|jpg|png|gif|webp/;
+      cb(null, allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype));
+    }
+  });
+  console.log('Photo uploads: local disk');
+}
 
 // --- Spam protection ---
 
@@ -198,28 +216,44 @@ app.get('/api/courts/:id/reports', async (req, res) => {
 
 // Create report with photos
 app.post('/api/courts/:id/reports', (req, res, next) => {
+  console.log(`[report] POST /api/courts/${req.params.id}/reports — starting upload`);
   upload.array('photos', 3)(req, res, (err) => {
     if (err) {
-      console.error('Upload error:', err);
-      return res.status(500).json({ error: 'Photo upload failed. Please try again without photos or check back later.' });
+      console.error('[report] Upload middleware error:', err);
+      return res.status(500).json({ error: 'Photo upload failed. Please try again without photos.' });
     }
+    console.log(`[report] Upload complete, files: ${req.files ? req.files.length : 0}`);
     next();
   });
 }, async (req, res) => {
   try {
-    if (honeypotCheck(req, res)) return res.status(201).json({ id: 0 });
+    console.log(`[report] Processing report for court ${req.params.id}`);
+
+    if (honeypotCheck(req, res)) {
+      console.log('[report] Honeypot triggered');
+      return res.status(201).json({ id: 0 });
+    }
     if (!rateLimit(req, 'reports')) {
+      console.log('[report] Rate limited');
       return res.status(429).json({ error: 'You can only submit 5 reports per hour. Please try again later.' });
     }
 
     const courtId = req.params.id;
     const { rows: courtRows } = await pool.query('SELECT id FROM courts WHERE id = $1', [courtId]);
-    if (courtRows.length === 0) return res.status(404).json({ error: 'Court not found' });
+    if (courtRows.length === 0) {
+      console.log(`[report] Court ${courtId} not found`);
+      return res.status(404).json({ error: 'Court not found' });
+    }
 
     const { status, comment } = req.body;
-    if (!status) return res.status(400).json({ error: 'Status is required' });
+    if (!status) {
+      console.log('[report] Missing status');
+      return res.status(400).json({ error: 'Status is required' });
+    }
 
-    const photoPaths = req.files ? req.files.map(f => f.path) : [];
+    // Cloudinary files have .path as URL; local disk files need /uploads/ prefix
+    const photoPaths = req.files ? req.files.map(f => f.path || ('/uploads/' + f.filename)) : [];
+    console.log(`[report] Photos: ${JSON.stringify(photoPaths)}`);
 
     const { rows } = await pool.query(
       `INSERT INTO reports (court_id, status, comment, photo_paths)
@@ -227,10 +261,13 @@ app.post('/api/courts/:id/reports', (req, res, next) => {
       [courtId, status, comment || null, JSON.stringify(photoPaths)]
     );
 
-    res.status(201).json({ id: rows[0].id });
+    console.log(`[report] Created report ${rows[0].id}`);
+    return res.status(201).json({ id: rows[0].id });
   } catch (err) {
-    console.error('POST /api/courts/:id/reports error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[report] Handler error:', err);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
   }
 });
 
