@@ -56,12 +56,11 @@ async function initDb() {
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
   `);
 
-  // Fix Georgetown Rec Center address and reset its coordinates for re-geocoding
+  // Delete fake/invalid courts
   await pool.query(`
-    UPDATE courts SET address = '3350 Q St NW, Washington, DC 20007', latitude = NULL, longitude = NULL
-    WHERE name ILIKE '%Georgetown Rec%';
+    DELETE FROM reports WHERE court_id IN (SELECT id FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%');
+    DELETE FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%';
   `);
-  console.log('[geocode] Reset Georgetown Rec Center for re-geocoding');
 
   // Seed sample photo reports (idempotent — only inserts if not already present)
   await pool.query(`
