@@ -41,7 +41,7 @@ async function initDb() {
     ALTER TABLE courts ADD COLUMN IF NOT EXISTS has_lights BOOLEAN DEFAULT false;
   `);
 
-  // Backfill has_lights and fix coordinates for existing courts
+  // Backfill has_lights for existing courts
   await pool.query(`
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Virginia Highlands%';
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Bluemont%';
@@ -54,19 +54,11 @@ async function initDb() {
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Lyon Village%';
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Arlington Tennis%';
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
-
-    UPDATE courts SET latitude = 38.8513, longitude = -77.0537 WHERE name ILIKE '%Virginia Highlands%';
-    UPDATE courts SET latitude = 38.8812, longitude = -77.1053 WHERE name ILIKE '%Bluemont%';
-    UPDATE courts SET latitude = 38.8399, longitude = -77.0750 WHERE name ILIKE '%Gunston%';
-    UPDATE courts SET latitude = 38.8868, longitude = -77.0938 WHERE name ILIKE '%Towers%';
-    UPDATE courts SET latitude = 38.9021, longitude = -77.1019 WHERE name ILIKE '%Glebe%';
-    UPDATE courts SET latitude = 38.8978, longitude = -77.0887 WHERE name ILIKE '%Quincy%';
-    UPDATE courts SET latitude = 38.8489, longitude = -77.1043 WHERE name ILIKE '%Barcroft%';
-    UPDATE courts SET latitude = 38.8871, longitude = -77.1154 WHERE name ILIKE '%Bon Air%';
-    UPDATE courts SET latitude = 38.8938, longitude = -77.0938 WHERE name ILIKE '%Lyon Village%';
-    UPDATE courts SET latitude = 38.8527, longitude = -77.0993 WHERE name ILIKE '%Arlington Tennis%';
-    UPDATE courts SET latitude = 38.9117, longitude = -77.0232 WHERE name ILIKE '%Banneker%';
   `);
+
+  // Reset all coordinates so Google Geocoding can re-geocode from addresses
+  await pool.query('UPDATE courts SET latitude = NULL, longitude = NULL');
+  console.log('[geocode] Reset all court coordinates to NULL for re-geocoding');
 
   // Seed sample photo reports (idempotent — only inserts if not already present)
   await pool.query(`
@@ -96,24 +88,31 @@ async function initDb() {
     AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — excellent public courts.');
   `);
 
-  // Auto-geocode courts missing coordinates (requires GOOGLE_MAPS_API_KEY)
+  // Auto-geocode all courts missing coordinates (requires GOOGLE_MAPS_API_KEY)
   if (process.env.GOOGLE_MAPS_API_KEY) {
-    const { rows: missing } = await pool.query('SELECT id, address, city, state FROM courts WHERE latitude IS NULL OR longitude IS NULL');
+    const { rows: missing } = await pool.query('SELECT id, name, address, city, state FROM courts WHERE latitude IS NULL OR longitude IS NULL');
+    console.log(`[geocode] ${missing.length} courts need geocoding`);
     for (const court of missing) {
       try {
-        const query = encodeURIComponent(`${court.address}, ${court.city}, ${court.state}`);
+        const fullAddress = `${court.address}, ${court.city}, ${court.state}`;
+        const query = encodeURIComponent(fullAddress);
         const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
         const res = await fetch(url);
         const data = await res.json();
         if (data.status === 'OK' && data.results.length > 0) {
           const { lat, lng } = data.results[0].geometry.location;
+          const formatted = data.results[0].formatted_address;
           await pool.query('UPDATE courts SET latitude = $1, longitude = $2 WHERE id = $3', [lat, lng, court.id]);
-          console.log(`[geocode] Court ${court.id}: ${court.address} -> ${lat}, ${lng}`);
+          console.log(`[geocode] ✓ "${court.name}" (${fullAddress}) -> ${lat}, ${lng} (${formatted})`);
+        } else {
+          console.log(`[geocode] ✗ "${court.name}" (${fullAddress}) -> ${data.status}`);
         }
       } catch (err) {
-        console.error(`[geocode] Failed for court ${court.id}:`, err.message);
+        console.error(`[geocode] ✗ "${court.name}" error:`, err.message);
       }
     }
+  } else {
+    console.log('[geocode] Skipping — GOOGLE_MAPS_API_KEY not set');
   }
 
   const { rows } = await pool.query('SELECT COUNT(*) AS c FROM courts');
