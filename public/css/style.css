@@ -321,6 +321,23 @@ body {
   font-family: inherit;
 }
 
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.filter-checkbox input {
+  accent-color: var(--green-600);
+  width: 16px;
+  height: 16px;
+}
+
 .filters select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
@@ -524,6 +541,11 @@ body {
 .badge-access {
   background: var(--gray-100);
   color: var(--gray-600);
+}
+
+.badge-lights {
+  background: #fef9c3;
+  color: #a16207;
 }
 
 .court-card-status {

@@ -6,6 +6,7 @@ const searchInput = document.getElementById('filter-search');
 const courtListEl = document.getElementById('court-list');
 const courtMapEl = document.getElementById('court-map');
 const viewToggle = document.getElementById('view-toggle');
+const lightsFilter = document.getElementById('filter-lights');
 
 let allCities = [];
 let allCourts = [];
@@ -123,15 +124,22 @@ function initMap() {
   }
 }
 
+function getFilteredCourts() {
+  const query = searchInput.value.trim().toLowerCase();
+  const lightsOnly = lightsFilter.checked;
+  return allCourts.filter(c => {
+    if (query && !c.name.toLowerCase().includes(query)) return false;
+    if (lightsOnly && !c.has_lights) return false;
+    return true;
+  });
+}
+
 function updateMapMarkers() {
   // Clear existing
   markers.forEach(m => map.removeLayer(m));
   markers = [];
 
-  const query = searchInput.value.trim().toLowerCase();
-  const courts = query
-    ? allCourts.filter(c => c.name.toLowerCase().includes(query))
-    : allCourts;
+  const courts = getFilteredCourts();
 
   courts.forEach(c => {
     if (!c.latitude || !c.longitude) return;
@@ -152,7 +160,7 @@ function updateMapMarkers() {
     marker.bindPopup(`
       <div style="min-width:180px">
         <strong style="font-size:14px">${esc(c.name)}</strong><br>
-        <span style="color:#6b7280;font-size:12px">${esc(c.city)}, ${esc(c.state)} &middot; ${esc(c.surface)} &middot; ${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}</span><br>
+        <span style="color:#6b7280;font-size:12px">${esc(c.city)}, ${esc(c.state)} &middot; ${esc(c.surface)} &middot; ${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}${c.has_lights ? ' &middot; Lights' : ''}</span><br>
         <div style="margin:6px 0">${statusHtml}</div>
         <a href="/court/${c.id}" style="color:#16a34a;font-weight:600;font-size:13px">View Court →</a>
       </div>
@@ -178,10 +186,7 @@ async function loadCourts() {
 }
 
 function renderCourts() {
-  const query = searchInput.value.trim().toLowerCase();
-  const courts = query
-    ? allCourts.filter(c => c.name.toLowerCase().includes(query))
-    : allCourts;
+  const courts = getFilteredCourts();
 
   if (courts.length === 0) {
     courtListEl.innerHTML = `
@@ -207,6 +212,7 @@ function renderCourts() {
           <span class="badge badge-surface">${esc(c.surface)}</span>
           <span class="badge badge-access">${esc(c.public_private)}</span>
           <span class="badge badge-access">${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}</span>
+          ${c.has_lights ? '<span class="badge badge-lights">Lights</span>' : ''}
         </div>
       </div>
       <div class="court-card-right">
@@ -265,6 +271,7 @@ stateSelect.addEventListener('change', () => {
 
 citySelect.addEventListener('change', loadCourts);
 searchInput.addEventListener('input', renderCourts);
+lightsFilter.addEventListener('change', renderCourts);
 
 // --- Init ---
 

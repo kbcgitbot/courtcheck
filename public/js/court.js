@@ -85,8 +85,8 @@ async function loadCourt() {
           <div class="value">${esc(c.public_private)}</div>
         </div>
         <div class="court-info-item">
-          <div class="label">Added</div>
-          <div class="value">${formatDate(c.created_at)}</div>
+          <div class="label">Lights</div>
+          <div class="value">${c.has_lights ? 'Yes' : 'No'}</div>
         </div>
       </div>
       ${c.maps_link ? `<a href="${esc(c.maps_link)}" target="_blank" rel="noopener" class="maps-link">&#x1f4cd; Open in Google Maps</a>` : ''}
