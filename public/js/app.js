@@ -242,7 +242,7 @@ function esc(str) {
 
 // --- Mobile toggle ---
 
-let mobileShowMap = false;
+let mobileShowMap = true;
 
 function updateMobileView() {
   if (mobileShowMap) {
@@ -276,5 +276,6 @@ lightsFilter.addEventListener('change', renderCourts);
 // --- Init ---
 
 initMap();
+updateMobileView();
 loadFilters();
 loadCourts();
