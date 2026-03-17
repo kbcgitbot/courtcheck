@@ -86,12 +86,37 @@ async function loadCourt() {
         </div>
         <div class="court-info-item">
           <div class="label">Lights</div>
-          <div class="value">${c.has_lights ? 'Yes' : 'No'}</div>
+          <div class="value" id="lights-display">${c.has_lights ? 'Yes' : 'No'}</div>
         </div>
       </div>
       ${c.maps_link ? `<a href="${esc(c.maps_link)}" target="_blank" rel="noopener" class="maps-link">&#x1f4cd; Open in Google Maps</a>` : ''}
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--gray-100); display:flex; align-items:center; gap:8px;">
+        <label style="font-size:0.8125rem; color:var(--gray-500); font-weight:600;">Lights available?</label>
+        <select id="lights-edit" style="padding:4px 8px; border:1px solid var(--gray-300); border-radius:6px; font-size:0.8125rem;">
+          <option value="true" ${c.has_lights ? 'selected' : ''}>Yes</option>
+          <option value="false" ${!c.has_lights ? 'selected' : ''}>No</option>
+        </select>
+        <button id="lights-save" class="btn btn-small" style="background:var(--green-600); color:white; border:none; border-radius:6px; padding:4px 12px; font-size:0.8125rem; cursor:pointer;">Save</button>
+      </div>
     </div>
   `;
+
+  document.getElementById('lights-save').addEventListener('click', async () => {
+    const val = document.getElementById('lights-edit').value === 'true';
+    try {
+      const res = await fetch('/api/courts/' + courtId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ has_lights: val })
+      });
+      if (res.ok) {
+        document.getElementById('lights-display').textContent = val ? 'Yes' : 'No';
+        showToast('Lights info updated!');
+      } else {
+        showToast('Failed to update');
+      }
+    } catch { showToast('Failed to update'); }
+  });
 
   formContainer.innerHTML = `
     <div class="report-form-section">

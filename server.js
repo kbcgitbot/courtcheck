@@ -226,6 +226,25 @@ app.post('/api/courts/:id/reports', upload.array('photos', 3), async (req, res) 
   }
 });
 
+// Update court info (lights)
+app.patch('/api/courts/:id', async (req, res) => {
+  try {
+    const { has_lights } = req.body;
+    if (typeof has_lights !== 'boolean') {
+      return res.status(400).json({ error: 'has_lights must be a boolean' });
+    }
+    const { rows } = await pool.query(
+      'UPDATE courts SET has_lights = $1 WHERE id = $2 RETURNING id, has_lights',
+      [has_lights, req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Court not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/courts/:id error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Flag a report
 app.post('/api/reports/:id/flag', async (req, res) => {
   try {

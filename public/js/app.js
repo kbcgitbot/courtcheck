@@ -99,7 +99,7 @@ function markerColor(status) {
 // --- Map ---
 
 function initMap() {
-  map = L.map('court-map').setView([38.8816, -77.0910], 14);
+  map = L.map('court-map').setView([38.8816, -77.0910], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
