@@ -197,7 +197,15 @@ app.get('/api/courts/:id/reports', async (req, res) => {
 });
 
 // Create report with photos
-app.post('/api/courts/:id/reports', upload.array('photos', 3), async (req, res) => {
+app.post('/api/courts/:id/reports', (req, res, next) => {
+  upload.array('photos', 3)(req, res, (err) => {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(500).json({ error: 'Photo upload failed. Please try again without photos or check back later.' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (honeypotCheck(req, res)) return res.status(201).json({ id: 0 });
     if (!rateLimit(req, 'reports')) {
@@ -292,6 +300,12 @@ ${urls.join('\n')}
 // SPA fallback — serve court.html for /court/:id routes
 app.get('/court/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'court.html'));
+});
+
+// Catch-all error handler — always return JSON, never HTML
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 async function start() {

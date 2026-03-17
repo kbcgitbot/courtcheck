@@ -16,7 +16,7 @@ form.addEventListener('submit', async (e) => {
     name: form.name.value.trim(),
     address: form.address.value.trim(),
     city: form.city.value.trim(),
-    state: form.state.value.trim().toUpperCase(),
+    state: form.state.value,
     num_courts: Number(form.num_courts.value),
     surface: form.surface.value,
     public_private: form.public_private.value,
@@ -32,10 +32,7 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (data.state.length !== 2) {
-    showToast('State should be a 2-letter abbreviation (e.g. TX)');
-    return;
-  }
+
 
   const btn = form.querySelector('button[type="submit"]');
   btn.disabled = true;
