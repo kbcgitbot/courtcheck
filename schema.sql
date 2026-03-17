@@ -62,3 +62,11 @@ INSERT INTO reports (court_id, status, comment, created_at) VALUES
   (9, 'Wet/Puddles', 'Morning dew still on the courts at 7am. Dry by 9.', NOW() - INTERVAL '2 days'),
   (10, 'Great', 'Six solid courts at the tennis center. Great facility with pro shop.', NOW() - INTERVAL '3 days'),
   (10, 'Great', 'Played on courts 3-4. Freshly resurfaced. Best courts in Arlington.', NOW() - INTERVAL '50 minutes');
+
+-- Seed data: Photo reports
+INSERT INTO reports (court_id, status, comment, created_at, photo_paths) VALUES
+  (1, 'Great', 'Beautiful courts at Virginia Highlands — here is a photo from today.', NOW() - INTERVAL '2 hours', '["https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800"]'),
+  (2, 'Great', 'Bluemont Park courts looking fantastic after the resurface.', NOW() - INTERVAL '5 hours', '["https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800"]'),
+  (4, 'Great', 'Towers Park on a clear afternoon — courts are in great shape.', NOW() - INTERVAL '8 hours', '["https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800"]'),
+  (6, 'Busy/Long Wait', 'Quincy Park packed as usual on the weekend.', NOW() - INTERVAL '1 day', '["https://images.unsplash.com/photo-1529926706528-db9e5010cd7e?w=800"]'),
+  (10, 'Great', 'Arlington Tennis Center — freshly resurfaced courts.', NOW() - INTERVAL '4 hours', '["https://images.unsplash.com/photo-1599586120429-48281b6f0ece?w=800"]');

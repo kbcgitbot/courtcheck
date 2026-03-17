@@ -104,6 +104,22 @@ async function initDb() {
       );
     }
 
+    // Seed photo reports for 5 courts
+    const photoReports = [
+      [1, 'Great', 'Beautiful courts at Virginia Highlands — here is a photo from today.', ts(2 * h), JSON.stringify(['https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800'])],
+      [2, 'Great', 'Bluemont Park courts looking fantastic after the resurface.', ts(5 * h), JSON.stringify(['https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800'])],
+      [4, 'Great', 'Towers Park on a clear afternoon — courts are in great shape.', ts(8 * h), JSON.stringify(['https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800'])],
+      [6, 'Busy/Long Wait', 'Quincy Park packed as usual on the weekend.', ts(1 * d), JSON.stringify(['https://images.unsplash.com/photo-1529926706528-db9e5010cd7e?w=800'])],
+      [10, 'Great', 'Arlington Tennis Center — freshly resurfaced courts.', ts(4 * h), JSON.stringify(['https://images.unsplash.com/photo-1599586120429-48281b6f0ece?w=800'])],
+    ];
+
+    for (const r of photoReports) {
+      await client.query(
+        'INSERT INTO reports (court_id, status, comment, created_at, photo_paths) VALUES ($1,$2,$3,$4,$5)',
+        r
+      );
+    }
+
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK');
