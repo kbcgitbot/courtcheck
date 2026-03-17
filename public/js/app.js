@@ -13,6 +13,8 @@ let allCourts = [];
 let map = null;
 let markers = [];
 let infoWindow = null;
+let placesService = null;
+const photoCache = {}; // court name -> photo URL
 
 // Tennis ball SVG data URL for map markers
 const TENNIS_BALL_SVG = 'data:image/svg+xml,' + encodeURIComponent(
@@ -110,7 +112,7 @@ async function loadGoogleMaps() {
 
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}&libraries=places`;
       script.async = true;
       script.onload = resolve;
       script.onerror = reject;
@@ -133,6 +135,7 @@ function initMap() {
   });
 
   infoWindow = new google.maps.InfoWindow();
+  placesService = new google.maps.places.PlacesService(map);
 }
 
 function getFilteredCourts() {
@@ -172,18 +175,49 @@ function updateMapMarkers() {
       ? `<strong class="${statusClass(c.latest_status)}">${esc(c.latest_status)}</strong> &middot; ${timeAgo(c.latest_report_at)}`
       : '<em style="color:#9ca3af">No reports yet</em>';
 
-    const content = `
-      <div style="min-width:180px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-        <strong style="font-size:14px">${esc(c.name)}</strong><br>
-        <span style="color:#6b7280;font-size:12px">${esc(c.city)}, ${esc(c.state)} &middot; ${esc(c.surface)} &middot; ${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}${c.has_lights ? ' &middot; Lights' : ''}</span><br>
-        <div style="margin:6px 0">${statusHtml}</div>
-        <a href="/court/${c.id}" style="color:#16a34a;font-weight:600;font-size:13px;text-decoration:none;">View Court &rarr;</a>
-      </div>
-    `;
+    const FALLBACK_PHOTO = 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=150&fit=crop';
+
+    function buildInfoContent(photoUrl) {
+      return `
+        <div style="width:280px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+          <img src="${photoUrl}" alt="${esc(c.name)}" style="width:100%;height:150px;object-fit:cover;border-radius:8px 8px 0 0;display:block;">
+          <div style="padding:10px;">
+            <strong style="font-size:14px">${esc(c.name)}</strong><br>
+            <span style="color:#6b7280;font-size:12px">${esc(c.city)}, ${esc(c.state)} &middot; ${esc(c.surface)} &middot; ${c.num_courts} court${c.num_courts !== 1 ? 's' : ''}${c.has_lights ? ' &middot; Lights' : ''}</span><br>
+            <div style="margin:6px 0">${statusHtml}</div>
+            <a href="/court/${c.id}" style="color:#16a34a;font-weight:600;font-size:13px;text-decoration:none;">View Court &rarr;</a>
+          </div>
+        </div>
+      `;
+    }
 
     marker.addListener('click', () => {
-      infoWindow.setContent(content);
+      // Show immediately with fallback, then upgrade with Places photo
+      if (photoCache[c.name]) {
+        infoWindow.setContent(buildInfoContent(photoCache[c.name]));
+        infoWindow.open(map, marker);
+        return;
+      }
+
+      infoWindow.setContent(buildInfoContent(FALLBACK_PHOTO));
       infoWindow.open(map, marker);
+
+      if (placesService) {
+        const request = {
+          query: c.name + ' tennis ' + c.city + ' ' + c.state,
+          fields: ['photos'],
+          locationBias: { lat: parseFloat(c.latitude), lng: parseFloat(c.longitude) },
+        };
+        placesService.findPlaceFromQuery(request, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results[0] && results[0].photos && results[0].photos.length > 0) {
+            const url = results[0].photos[0].getUrl({ maxWidth: 400, maxHeight: 150 });
+            photoCache[c.name] = url;
+            infoWindow.setContent(buildInfoContent(url));
+          } else {
+            photoCache[c.name] = FALLBACK_PHOTO;
+          }
+        });
+      }
     });
 
     markers.push(marker);
