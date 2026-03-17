@@ -98,10 +98,22 @@ function markerColor(status) {
 
 // --- Map ---
 
+function tennisBallIcon(hasLights) {
+  const size = hasLights ? 28 : 24;
+  const glow = hasLights ? 'box-shadow: 0 0 8px 2px rgba(234,179,8,0.6);' : '';
+  return L.divIcon({
+    className: '',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#c8e63a;border:2px solid #a3b829;position:relative;overflow:hidden;${glow}"><div style="position:absolute;top:15%;left:-10%;width:55%;height:70%;border:2px solid rgba(255,255,255,0.7);border-radius:50%;border-right:none;"></div><div style="position:absolute;top:15%;right:-10%;width:55%;height:70%;border:2px solid rgba(255,255,255,0.7);border-radius:50%;border-left:none;"></div></div>`,
+  });
+}
+
 function initMap() {
   map = L.map('court-map').setView([38.8816, -77.0910], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
   }).addTo(map);
 
@@ -143,14 +155,8 @@ function updateMapMarkers() {
 
   courts.forEach(c => {
     if (!c.latitude || !c.longitude) return;
-    const color = markerColor(c.latest_status);
-    const marker = L.circleMarker([parseFloat(c.latitude), parseFloat(c.longitude)], {
-      radius: 10,
-      fillColor: color,
-      color: '#fff',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.85,
+    const marker = L.marker([parseFloat(c.latitude), parseFloat(c.longitude)], {
+      icon: tennisBallIcon(c.has_lights),
     }).addTo(map);
 
     const statusHtml = c.latest_status

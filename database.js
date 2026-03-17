@@ -41,7 +41,7 @@ async function initDb() {
     ALTER TABLE courts ADD COLUMN IF NOT EXISTS has_lights BOOLEAN DEFAULT false;
   `);
 
-  // Backfill has_lights for existing courts
+  // Backfill has_lights and fix coordinates for existing courts
   await pool.query(`
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Virginia Highlands%';
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Bluemont%';
@@ -54,6 +54,18 @@ async function initDb() {
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Lyon Village%';
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Arlington Tennis%';
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
+
+    UPDATE courts SET latitude = 38.8513, longitude = -77.0537 WHERE name ILIKE '%Virginia Highlands%';
+    UPDATE courts SET latitude = 38.8812, longitude = -77.1053 WHERE name ILIKE '%Bluemont%';
+    UPDATE courts SET latitude = 38.8399, longitude = -77.0750 WHERE name ILIKE '%Gunston%';
+    UPDATE courts SET latitude = 38.8868, longitude = -77.0938 WHERE name ILIKE '%Towers%';
+    UPDATE courts SET latitude = 38.9021, longitude = -77.1019 WHERE name ILIKE '%Glebe%';
+    UPDATE courts SET latitude = 38.8978, longitude = -77.0887 WHERE name ILIKE '%Quincy%';
+    UPDATE courts SET latitude = 38.8489, longitude = -77.1043 WHERE name ILIKE '%Barcroft%';
+    UPDATE courts SET latitude = 38.8871, longitude = -77.1154 WHERE name ILIKE '%Bon Air%';
+    UPDATE courts SET latitude = 38.8938, longitude = -77.0938 WHERE name ILIKE '%Lyon Village%';
+    UPDATE courts SET latitude = 38.8527, longitude = -77.0993 WHERE name ILIKE '%Arlington Tennis%';
+    UPDATE courts SET latitude = 38.9117, longitude = -77.0232 WHERE name ILIKE '%Banneker%';
   `);
 
   // Seed sample photo reports (idempotent — only inserts if not already present)
@@ -93,16 +105,16 @@ async function initDb() {
 
     // [name, address, city, state, num_courts, surface, public_private, maps_link, lat, lng, has_lights]
     const courts = [
-      ['Virginia Highlands Park', '3300 S 24th St', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Virginia+Highlands+Park+Tennis+Arlington+VA', 38.8486, -77.0574, true],
-      ['Bluemont Park', '601 N Manchester St', 'Arlington', 'VA', 9, 'hard', 'public', 'https://maps.google.com/?q=Bluemont+Park+Tennis+Arlington+VA', 38.8773, -77.1090, true],
-      ['Gunston Park', '2700 S Lang St', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Gunston+Park+Tennis+Arlington+VA', 38.8399, -77.0629, true],
+      ['Virginia Highlands Park', '3300 S 24th St', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Virginia+Highlands+Park+Tennis+Arlington+VA', 38.8513, -77.0537, true],
+      ['Bluemont Park', '601 N Manchester St', 'Arlington', 'VA', 9, 'hard', 'public', 'https://maps.google.com/?q=Bluemont+Park+Tennis+Arlington+VA', 38.8812, -77.1053, true],
+      ['Gunston Park', '2700 S Lang St', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Gunston+Park+Tennis+Arlington+VA', 38.8399, -77.0750, true],
       ['Towers Park', '900 N Vermont St', 'Arlington', 'VA', 4, 'hard', 'public', 'https://maps.google.com/?q=Towers+Park+Tennis+Arlington+VA', 38.8868, -77.0938, true],
       ['Glebe Road Park', '3801 N Glebe Rd', 'Arlington', 'VA', 3, 'hard', 'public', 'https://maps.google.com/?q=Glebe+Road+Park+Tennis+Arlington+VA', 38.9021, -77.1019, true],
-      ['Quincy Park', '3700 N Quincy St', 'Arlington', 'VA', 4, 'hard', 'public', 'https://maps.google.com/?q=Quincy+Park+Tennis+Arlington+VA', 38.9015, -77.0938, true],
-      ['Barcroft Park', '4200 S Four Mile Run Dr', 'Arlington', 'VA', 5, 'hard', 'public', 'https://maps.google.com/?q=Barcroft+Park+Tennis+Arlington+VA', 38.8432, -77.1043, true],
+      ['Quincy Park', '3700 N Quincy St', 'Arlington', 'VA', 4, 'hard', 'public', 'https://maps.google.com/?q=Quincy+Park+Tennis+Arlington+VA', 38.8978, -77.0887, true],
+      ['Barcroft Park', '4200 S Four Mile Run Dr', 'Arlington', 'VA', 5, 'hard', 'public', 'https://maps.google.com/?q=Barcroft+Park+Tennis+Arlington+VA', 38.8489, -77.1043, true],
       ['Bon Air Park', '850 N Lexington St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Bon+Air+Park+Tennis+Arlington+VA', 38.8871, -77.1154, true],
       ['Lyon Village Park', '1900 N Highland St', 'Arlington', 'VA', 2, 'hard', 'public', 'https://maps.google.com/?q=Lyon+Village+Park+Tennis+Arlington+VA', 38.8938, -77.0938, true],
-      ['Arlington Tennis Center', '3700 S Four Mile Run Dr', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Arlington+Tennis+Center+Arlington+VA', 38.8451, -77.1013, true],
+      ['Arlington Tennis Center', '3700 S Four Mile Run Dr', 'Arlington', 'VA', 6, 'hard', 'public', 'https://maps.google.com/?q=Arlington+Tennis+Center+Arlington+VA', 38.8527, -77.0993, true],
     ];
 
     for (const c of courts) {
