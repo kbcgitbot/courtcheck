@@ -41,6 +41,49 @@ async function initDb() {
     ALTER TABLE courts ADD COLUMN IF NOT EXISTS has_lights BOOLEAN DEFAULT false;
   `);
 
+  // Backfill has_lights for existing courts
+  await pool.query(`
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Virginia Highlands%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Bluemont%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Gunston%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Towers%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Glebe%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Quincy%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Barcroft%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Bon Air%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Lyon Village%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Arlington Tennis%';
+    UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
+  `);
+
+  // Seed sample photo reports (idempotent — only inserts if not already present)
+  await pool.query(`
+    INSERT INTO reports (court_id, status, comment, photo_paths, flag_count, created_at)
+    SELECT id, 'Great', 'Sample photo — courts in good condition.', '["https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800"]', 0, NOW()
+    FROM courts WHERE name ILIKE '%Virginia Highlands%'
+    AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — courts in good condition.');
+
+    INSERT INTO reports (court_id, status, comment, photo_paths, flag_count, created_at)
+    SELECT id, 'Great', 'Sample photo — courts looking great after resurfacing.', '["https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800"]', 0, NOW()
+    FROM courts WHERE name ILIKE '%Bluemont%'
+    AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — courts looking great after resurfacing.');
+
+    INSERT INTO reports (court_id, status, comment, photo_paths, flag_count, created_at)
+    SELECT id, 'Great', 'Sample photo — clean courts ready for play.', '["https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800"]', 0, NOW()
+    FROM courts WHERE name ILIKE '%Gunston%'
+    AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — clean courts ready for play.');
+
+    INSERT INTO reports (court_id, status, comment, photo_paths, flag_count, created_at)
+    SELECT id, 'Great', 'Sample photo — well-maintained facility.', '["https://images.unsplash.com/photo-1529926706528-db9e5010cd7e?w=800"]', 0, NOW()
+    FROM courts WHERE name ILIKE '%Barcroft%'
+    AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — well-maintained facility.');
+
+    INSERT INTO reports (court_id, status, comment, photo_paths, flag_count, created_at)
+    SELECT id, 'Great', 'Sample photo — excellent public courts.', '["https://images.unsplash.com/photo-1599586120429-48281b6f0ece?w=800"]', 0, NOW()
+    FROM courts WHERE name ILIKE '%Banneker%'
+    AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — excellent public courts.');
+  `);
+
   const { rows } = await pool.query('SELECT COUNT(*) AS c FROM courts');
   if (parseInt(rows[0].c) > 0) return;
 
