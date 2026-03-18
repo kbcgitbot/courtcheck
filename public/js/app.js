@@ -279,6 +279,7 @@ function renderCourts() {
           </div>
         ` : `<div class="no-reports">No reports yet</div>`}
       </div>
+      ${c.court_note ? `<div class="court-card-note">${esc(c.court_note)}</div>` : ''}
     </a>`;
   }).join('');
 

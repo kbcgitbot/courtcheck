@@ -370,6 +370,7 @@ body {
   text-decoration: none;
   color: inherit;
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   align-items: stretch;
   transition: box-shadow 0.15s, transform 0.1s;
@@ -546,6 +547,19 @@ body {
 .badge-lights {
   background: #fef9c3;
   color: #a16207;
+}
+
+.court-card-note {
+  width: 100%;
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  border-top: 1px solid var(--gray-100);
+  padding-top: 8px;
+  margin-top: 4px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .court-card-status {

@@ -56,6 +56,20 @@ async function initDb() {
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
   `);
 
+  // Seed sample court notes (only if empty)
+  await pool.query(`
+    UPDATE courts SET court_note = '6 lighted hard courts with a backboard. Courts are first-come, first-served. Parking lot on S 24th St.', court_note_updated_at = NOW() WHERE name ILIKE '%Virginia Highlands%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '9 hard courts with lights, the most in Arlington. Popular on weekends — arrive early. Adjacent to the W&OD trail.', court_note_updated_at = NOW() WHERE name ILIKE '%Bluemont%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '3 lighted hard courts in a quiet neighborhood park. Nets are maintained by the county and usually in good shape.', court_note_updated_at = NOW() WHERE name ILIKE '%Gunston%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '4 lighted courts on a hilltop with a nice breeze. Can get busy after work on weekdays.', court_note_updated_at = NOW() WHERE name ILIKE '%Towers%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '3 lighted hard courts near the intersection of Glebe and Old Dominion. Street parking available on N Glebe Rd.', court_note_updated_at = NOW() WHERE name ILIKE '%Glebe%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '4 lighted courts in a popular park with a rec center. Weekends are packed — weekday mornings are your best bet.', court_note_updated_at = NOW() WHERE name ILIKE '%Quincy%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '5 lighted hard courts next to the community center. Good drainage — playable soon after rain.', court_note_updated_at = NOW() WHERE name ILIKE '%Barcroft%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '2 lighted courts near the rose garden. Quiet spot, rarely crowded. Nice for casual play.', court_note_updated_at = NOW() WHERE name ILIKE '%Bon Air%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '2 lighted courts in a small neighborhood park. Cozy and low-key — great for a quick hit after work.', court_note_updated_at = NOW() WHERE name ILIKE '%Lyon Village%' AND court_note IS NULL;
+    UPDATE courts SET court_note = '6 indoor/outdoor courts with a pro shop and lessons. Reservations recommended for peak hours.', court_note_updated_at = NOW() WHERE name ILIKE '%Arlington Tennis%' AND court_note IS NULL;
+  `);
+
   // Add court note columns
   await pool.query(`
     ALTER TABLE courts ADD COLUMN IF NOT EXISTS court_note TEXT;
