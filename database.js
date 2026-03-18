@@ -56,6 +56,19 @@ async function initDb() {
     UPDATE courts SET has_lights = true WHERE name ILIKE '%Banneker%';
   `);
 
+  // Add court note columns
+  await pool.query(`
+    ALTER TABLE courts ADD COLUMN IF NOT EXISTS court_note TEXT;
+    ALTER TABLE courts ADD COLUMN IF NOT EXISTS court_note_updated_at TIMESTAMP;
+  `);
+
+  // Migrate old status values to new simplified options
+  await pool.query(`
+    UPDATE reports SET status = 'Dry & Open' WHERE status IN ('Great');
+    UPDATE reports SET status = 'Wet / Puddles' WHERE status IN ('Wet/Puddles');
+    UPDATE reports SET status = 'Closed' WHERE status IN ('Closed', 'Cracked', 'Cracks/Uneven', 'Busy/Long Wait');
+  `);
+
   // Delete fake/invalid courts
   await pool.query(`
     DELETE FROM reports WHERE court_id IN (SELECT id FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%');

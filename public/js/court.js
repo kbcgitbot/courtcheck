@@ -16,8 +16,9 @@ function esc(str) {
 }
 
 function timeAgo(dateStr) {
+  if (!dateStr) return '';
   const now = Date.now();
-  const then = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z')).getTime();
+  const then = new Date(dateStr instanceof Date ? dateStr : (typeof dateStr === 'string' && !dateStr.endsWith('Z') ? dateStr + 'Z' : dateStr)).getTime();
   const diff = now - then;
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
@@ -31,23 +32,21 @@ function timeAgo(dateStr) {
 }
 
 function formatDate(dateStr) {
-  const d = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z'));
+  const d = new Date(dateStr instanceof Date ? dateStr : (typeof dateStr === 'string' && !dateStr.endsWith('Z') ? dateStr + 'Z' : dateStr));
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function isStale(dateStr) {
-  const then = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z')).getTime();
+  const then = new Date(dateStr instanceof Date ? dateStr : (typeof dateStr === 'string' && !dateStr.endsWith('Z') ? dateStr + 'Z' : dateStr)).getTime();
   return Date.now() - then > 7 * 86400000;
 }
 
 function statusBadgeClass(status) {
   if (!status) return '';
   const s = status.toLowerCase();
-  if (s === 'great') return 'status-badge-great';
+  if (s.includes('dry') || s === 'great') return 'status-badge-great';
   if (s.includes('wet')) return 'status-badge-wet';
-  if (s.includes('crack')) return 'status-badge-cracked';
-  if (s.includes('busy')) return 'status-badge-busy';
-  if (s === 'closed') return 'status-badge-closed';
+  if (s.includes('closed') || s.includes('crack') || s.includes('busy')) return 'status-badge-closed';
   return '';
 }
 
@@ -99,8 +98,30 @@ async function loadCourt() {
         <button id="lights-save" class="btn btn-small" style="background:var(--green-600); color:white; border:none; border-radius:6px; padding:4px 12px; font-size:0.8125rem; cursor:pointer;">Save</button>
       </div>
     </div>
+
+    <div class="report-form-section" style="margin-top:16px;">
+      <h3>About These Courts</h3>
+      <div id="court-note-display">
+        <p id="court-note-text" style="color:${c.court_note ? 'var(--gray-700)' : 'var(--gray-400)'}; font-size:0.9375rem; line-height:1.5; margin-bottom:8px;">
+          ${c.court_note ? esc(c.court_note) : 'No notes yet — click Edit to add info about these courts.'}
+        </p>
+        ${c.court_note_updated_at ? `<div style="font-size:0.75rem; color:var(--gray-400); margin-bottom:8px;">Last edited ${timeAgo(c.court_note_updated_at)}</div>` : ''}
+        <button id="note-edit-btn" class="btn btn-small" style="background:none; border:1px solid var(--gray-300); color:var(--gray-600); border-radius:6px; padding:4px 12px; font-size:0.8125rem; cursor:pointer;">Edit</button>
+      </div>
+      <div id="court-note-editor" style="display:none;">
+        <p style="font-size:0.75rem; color:var(--gray-400); font-style:italic; margin-bottom:8px; line-height:1.4;">
+          Help your fellow players — note any permanent or recurring issues here: cracked courts, missing nets, broken lights, or anything else that doesn't change day to day. Keep it brief and update it when things change.
+        </p>
+        <textarea id="note-textarea" style="width:100%; padding:10px 12px; border:1px solid var(--gray-300); border-radius:8px; font-size:0.9375rem; font-family:inherit; min-height:80px; resize:vertical;">${c.court_note ? esc(c.court_note) : ''}</textarea>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button id="note-save-btn" class="btn btn-small" style="background:var(--green-600); color:white; border:none; border-radius:6px; padding:6px 16px; font-size:0.8125rem; cursor:pointer;">Save</button>
+          <button id="note-cancel-btn" class="btn btn-small" style="background:none; border:1px solid var(--gray-300); color:var(--gray-600); border-radius:6px; padding:6px 16px; font-size:0.8125rem; cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
   `;
 
+  // Lights edit
   document.getElementById('lights-save').addEventListener('click', async () => {
     const val = document.getElementById('lights-edit').value === 'true';
     try {
@@ -118,6 +139,41 @@ async function loadCourt() {
     } catch { showToast('Failed to update'); }
   });
 
+  // Note edit toggle
+  document.getElementById('note-edit-btn').addEventListener('click', () => {
+    document.getElementById('court-note-display').style.display = 'none';
+    document.getElementById('court-note-editor').style.display = 'block';
+  });
+
+  document.getElementById('note-cancel-btn').addEventListener('click', () => {
+    document.getElementById('court-note-editor').style.display = 'none';
+    document.getElementById('court-note-display').style.display = 'block';
+  });
+
+  document.getElementById('note-save-btn').addEventListener('click', async () => {
+    const noteText = document.getElementById('note-textarea').value;
+    try {
+      const res = await fetch('/api/courts/' + courtId + '/note', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ court_note: noteText })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('court-note-text').textContent = data.court_note || 'No notes yet — click Edit to add info about these courts.';
+        document.getElementById('court-note-text').style.color = data.court_note ? 'var(--gray-700)' : 'var(--gray-400)';
+        document.getElementById('court-note-editor').style.display = 'none';
+        document.getElementById('court-note-display').style.display = 'block';
+        showToast('Court note saved!');
+        // Reload to update timestamp
+        loadCourt();
+      } else {
+        showToast('Failed to save note');
+      }
+    } catch { showToast('Failed to save note'); }
+  });
+
+  // Report form
   formContainer.innerHTML = `
     <div class="report-form-section">
       <h3>Submit a Condition Report</h3>
@@ -126,20 +182,12 @@ async function loadCourt() {
           <label>Condition *</label>
           <div class="status-options">
             <div class="status-option">
-              <input type="radio" name="status" id="s-great" value="Great" required>
-              <label for="s-great">Great</label>
+              <input type="radio" name="status" id="s-dry" value="Dry & Open" required>
+              <label for="s-dry">Dry & Open</label>
             </div>
             <div class="status-option">
-              <input type="radio" name="status" id="s-wet" value="Wet/Puddles">
-              <label for="s-wet">Wet/Puddles</label>
-            </div>
-            <div class="status-option">
-              <input type="radio" name="status" id="s-cracked" value="Cracked">
-              <label for="s-cracked">Cracked</label>
-            </div>
-            <div class="status-option">
-              <input type="radio" name="status" id="s-busy" value="Busy/Long Wait">
-              <label for="s-busy">Busy/Long Wait</label>
+              <input type="radio" name="status" id="s-wet" value="Wet / Puddles">
+              <label for="s-wet">Wet / Puddles</label>
             </div>
             <div class="status-option">
               <input type="radio" name="status" id="s-closed" value="Closed">

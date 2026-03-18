@@ -76,11 +76,9 @@ function timeAgo(dateStr) {
 function statusClass(status) {
   if (!status) return '';
   const s = status.toLowerCase();
-  if (s === 'great') return 'status-great';
+  if (s.includes('dry') || s === 'great') return 'status-great';
   if (s.includes('wet')) return 'status-wet';
-  if (s.includes('crack')) return 'status-cracked';
-  if (s.includes('busy')) return 'status-busy';
-  if (s === 'closed') return 'status-closed';
+  if (s.includes('closed') || s.includes('crack') || s.includes('busy')) return 'status-closed';
   return '';
 }
 

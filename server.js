@@ -331,6 +331,25 @@ app.patch('/api/courts/:id', async (req, res) => {
   }
 });
 
+// Update court note
+app.patch('/api/courts/:id/note', async (req, res) => {
+  try {
+    const { court_note } = req.body;
+    if (typeof court_note !== 'string') {
+      return res.status(400).json({ error: 'court_note must be a string' });
+    }
+    const { rows } = await pool.query(
+      'UPDATE courts SET court_note = $1, court_note_updated_at = NOW() WHERE id = $2 RETURNING id, court_note, court_note_updated_at',
+      [court_note.trim(), req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Court not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/courts/:id/note error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Flag a report
 app.post('/api/reports/:id/flag', async (req, res) => {
   try {
