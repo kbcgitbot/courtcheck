@@ -85,8 +85,8 @@ async function initDb() {
 
   // Delete fake/invalid courts
   await pool.query(`
-    DELETE FROM reports WHERE court_id IN (SELECT id FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%');
-    DELETE FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%';
+    DELETE FROM reports WHERE court_id IN (SELECT id FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%' OR name ILIKE '%sam''s test%');
+    DELETE FROM courts WHERE name ILIKE '%Georgetown Rec%' OR name ILIKE '%sam''s court%' OR name ILIKE '%sam''s test%';
   `);
 
   // Seed sample photo reports (idempotent — only inserts if not already present)
