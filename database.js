@@ -119,7 +119,8 @@ async function initDb() {
 
   // Fix known bad addresses
   await pool.query(`
-    UPDATE courts SET address = '4500 Q St NW' WHERE name ILIKE '%Hardy%' AND address ILIKE '%1819%';
+    UPDATE courts SET address = '4500 Q St NW', latitude = NULL, longitude = NULL WHERE name ILIKE '%Hardy%' AND address = '4500 Q St NW' AND latitude IS NOT NULL;
+    UPDATE courts SET address = '4500 Q St NW', latitude = NULL, longitude = NULL WHERE name ILIKE '%Hardy%' AND address ILIKE '%1819%';
   `);
 
   // Auto-geocode all courts missing coordinates (requires GOOGLE_MAPS_API_KEY)
