@@ -980,6 +980,25 @@ body {
   box-shadow: var(--shadow);
 }
 
+/* Footer */
+.site-footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.85rem;
+  color: var(--gray-400);
+}
+.site-footer a {
+  color: var(--gray-400);
+  text-decoration: none;
+}
+.site-footer a:hover {
+  color: var(--green-700);
+  text-decoration: underline;
+}
+.footer-sep {
+  margin: 0 0.5rem;
+}
+
 /* Responsive */
 @media (min-width: 640px) {
   .container { padding: 24px; }
