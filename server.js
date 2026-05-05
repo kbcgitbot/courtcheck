@@ -394,6 +394,11 @@ ${urls.join('\n')}
   }
 });
 
+// Nearby — GPS-based redirect to closest court
+app.get('/nearby', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'nearby.html'));
+});
+
 // SPA fallback — serve court.html for /court/:id routes
 app.get('/court/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'court.html'));
