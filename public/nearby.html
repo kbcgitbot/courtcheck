@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourtChek — Finding Your Court</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .nearby-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      padding: 2rem;
+    }
+    .nearby-container h1 {
+      margin-bottom: 1rem;
+    }
+    .nearby-status {
+      font-size: 1.2rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #e0e0e0;
+      border-top: 5px solid #2e7d32;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1.5rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .nearby-error {
+      color: #c62828;
+      font-size: 1.1rem;
+    }
+    .nearby-error a {
+      color: #2e7d32;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="nearby-container">
+    <img src="/courtcheck-logo.svg" alt="CourtChek" style="width:80px;margin-bottom:1rem;">
+    <h1>CourtChek</h1>
+    <div class="spinner" id="spinner"></div>
+    <div class="nearby-status" id="status">Finding your location...</div>
+  </div>
+
+  <script>
+    (function() {
+      const statusEl = document.getElementById('status');
+      const spinnerEl = document.getElementById('spinner');
+
+      function showError(msg) {
+        spinnerEl.style.display = 'none';
+        statusEl.innerHTML = '<div class="nearby-error">' + msg + '</div>';
+      }
+
+      function haversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 3958.8; // Earth radius in miles
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      async function findNearestCourt(lat, lon) {
+        statusEl.textContent = 'Finding nearest court...';
+        try {
+          const res = await fetch('/api/courts');
+          const courts = await res.json();
+
+          if (!courts.length) {
+            showError('No courts found. <a href="/">Go to CourtChek</a>');
+            return;
+          }
+
+          let nearest = null;
+          let minDist = Infinity;
+
+          for (const court of courts) {
+            if (court.latitude && court.longitude) {
+              const dist = haversineDistance(lat, lon, court.latitude, court.longitude);
+              if (dist < minDist) {
+                minDist = dist;
+                nearest = court;
+              }
+            }
+          }
+
+          if (!nearest) {
+            showError('No courts with location data found. <a href="/">Go to CourtChek</a>');
+            return;
+          }
+
+          statusEl.textContent = 'Redirecting to ' + nearest.name + '...';
+          window.location.href = '/court/' + nearest.id;
+        } catch (err) {
+          showError('Could not load courts. <a href="/">Go to CourtChek</a>');
+        }
+      }
+
+      if (!navigator.geolocation) {
+        showError('Geolocation is not supported by your browser. <a href="/">Go to CourtChek</a>');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          findNearestCourt(pos.coords.latitude, pos.coords.longitude);
+        },
+        function(err) {
+          if (err.code === 1) {
+            showError('Location access denied. Please allow location access and <a href="/nearby">try again</a>, or <a href="/">browse all courts</a>.');
+          } else {
+            showError('Could not determine your location. <a href="/">Browse all courts</a>');
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    })();
+  </script>
+</body>
+</html>
