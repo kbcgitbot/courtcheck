@@ -117,6 +117,11 @@ async function initDb() {
     AND NOT EXISTS (SELECT 1 FROM reports WHERE court_id = courts.id AND comment = 'Sample photo — excellent public courts.');
   `);
 
+  // Fix known bad addresses
+  await pool.query(`
+    UPDATE courts SET address = '4500 Q St NW' WHERE name ILIKE '%Hardy%' AND address ILIKE '%1819%';
+  `);
+
   // Auto-geocode all courts missing coordinates (requires GOOGLE_MAPS_API_KEY)
   if (process.env.GOOGLE_MAPS_API_KEY) {
     const { rows: missing } = await pool.query('SELECT id, name, address, city, state FROM courts WHERE latitude IS NULL OR longitude IS NULL');

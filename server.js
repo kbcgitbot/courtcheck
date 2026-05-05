@@ -209,12 +209,17 @@ app.post('/api/courts', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Auto-geocode if no coordinates provided
+    // Geocode and validate the address
     let lat = latitude || null;
     let lng = longitude || null;
     if (!lat || !lng) {
       const geo = await geocodeAddress(address, city, state);
-      if (geo) { lat = geo.lat; lng = geo.lng; }
+      if (geo) {
+        lat = geo.lat;
+        lng = geo.lng;
+      } else if (process.env.GOOGLE_MAPS_API_KEY) {
+        return res.status(400).json({ error: 'Could not verify that address. Please double-check the street address, city, and state.' });
+      }
     }
 
     const { rows } = await pool.query(
